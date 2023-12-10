@@ -23,6 +23,7 @@ function SetupThemes {
     }
 }
 
+# Change the profiles appearence
 function SetupProfiles {
     # Get the new configs from the profiles.json file
     $newProfiles = Get-Content ..\json_snippets\profiles.json -raw | ConvertFrom-Json
@@ -44,5 +45,72 @@ function SetupProfiles {
                 }
             }
         }
+    }
+}
+
+# Functions to change the Default profile
+# Ask if the user wants to change the Default Profile
+function ChangeDistroMenu {
+    do {
+        Clear-Host
+        Write-Host "================ Change the Default Profile ================"
+        Write-Host "Do you want to change the default profile?"
+        $answer = Read-Host "[y/N]"
+        switch ($answer) {
+            {$_ -in "y", "Y"} {
+                $distro = ChooseDistro
+                Write-Host "Yes"
+            }
+            default {
+                Write-Host "No"
+                $answer = "no"
+            }
+        }
+    } while ( $distro -eq "Cancelled" || $answer -ne "no")
+}
+
+# Show the distros to choose from and run ChangeProfile accordingly
+function ChooseDistro {
+    Write-Host "================ Choose what Distro to set as default ================"
+    Write-Host "1 - Ubuntu"
+    Write-Host "2 - Powershell 7"
+    Write-Host "0 - Cancel"
+    $answer = Read-Host "Enter the number"
+    switch ($answer) {
+        1 {
+            Write-Host "You chose Ubuntu"
+            ChangeProfile -distroName "Ubuntu"
+            return "Ubuntu"
+        }
+        2 {
+            Write-Host "You chose Powershell 7"
+            ChangeProfile -distroName "Powershell"
+            return "Powershell"
+        }
+        default {
+            Write-Host "Cancelled"
+            return "Cancelled"
+        }
+    }
+}
+
+# Change the default profile
+function ChangeProfile {
+    param (
+        [string]$distroName
+    )
+    $settingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState" 
+    # Convert the file to an object
+    $settings = Get-Content $settingsPath\settings.json -raw | ConvertFrom-Json
+    # Find the GUID of the Ubuntu profile 
+    $matchingProfileObject = $settings.profiles.list | Where-Object { $_.name -eq $distroName }
+    # Check if the Profile exists
+    if ($null -ne $matchingProfileObject) {
+        # Set the profile as default in the settings.json Object
+        $settings.defaultProfile = $matchingProfileObject.guid
+        # Update the settings file
+        $settings | ConvertTo-Json -Depth 10 | Set-Content $settingsPath\settings.json
+    } else {
+        Write-Host "Profile '$profileToMatch' not found"
     }
 }
