@@ -9,21 +9,23 @@ function WriteSettings {
     $settings | ConvertTo-Json -Depth 8 | Set-Content -Path $path\settings.json
 }
 
-# Add the color schemes and setup the profiles
+# Add the color schemes from the snippets
 function SetupThemes {
     param (
         [psobject]$settings
     )
     # Get the new schemes from the schemes.json file
-    $newSchemes = Get-Content .\snipets\schemes.json -raw | ConvertFrom-Json
+    $newSchemes = Get-Content ..\json_snippets\schemes.json -raw | ConvertFrom-Json
 
     # Add the schemes to the settings Object
     foreach ($scheme in $newSchemes.schemes) {
         $settings.schemes += $scheme
     }
+}
 
+function SetupProfiles {
     # Get the new configs from the profiles.json file
-    $newProfiles = Get-Content .\snipets\profiles.json -raw | ConvertFrom-Json
+    $newProfiles = Get-Content ..\json_snippets\profiles.json -raw | ConvertFrom-Json
 
     # Update the profiles in the original $settings with the ones from $newProfiles
     foreach ($newProfile in $newProfiles.profiles.list) {
