@@ -21,7 +21,7 @@ Import-Module -Name '.\Setup-TerminalFunctions'
 try {
     # Convert the settings file into an PS object
     $settingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
-    $settingsObject = ReadJsonToObject -path $settingsPath\settings.json
+    $settingsObject = Read-JsonToObject -path $settingsPath\settings.json
 
     ## Make a copy
     Copy-Item $settingsPath\settings.json $settingsPath\bak-settings.json
@@ -30,5 +30,11 @@ catch {
     Write-Host "Error reading settings.json: $_"
 }
 
+# 3.2 Add the new themes to the terminal
+Setup-Themes -settings $settingsObject
 
+# 3.3 Modify the Profiles' configuration
+Setup-Profiles -settings $settingsObject
 
+# 3.4 Ask if the user wants to set a default profile and set it if requested
+ChangeDefaultProfileMenu -settings $settingsObject

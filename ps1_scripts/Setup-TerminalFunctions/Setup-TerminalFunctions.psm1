@@ -28,7 +28,7 @@ function Setup-Themes {
         [psobject]$settings
     )
     # Get the new schemes from the schemes.json file
-    $newSchemes = Get-Content ..\json_snippets\schemes.json -raw | ConvertFrom-Json
+    $newSchemes = Read-JsonToObject -path ..\json_snippets\schemes.json
 
     # Add the schemes to the settings object
     foreach ($scheme in $newSchemes.schemes) {
@@ -66,9 +66,8 @@ function Setup-Profiles {
 
 # Functions to change the Default profile
 # Ask if the user wants to change the Default Profile
-function ChangeDistroMenu {
+function ChangeDefaultProfileMenu {
     param (
-        [string]$path,
         [psobject]$settings
     )
 
@@ -80,7 +79,7 @@ function ChangeDistroMenu {
         $answer = Read-Host "[y/N]"
         switch ($answer) {
             {$_ -in "y", "Y"} {
-                $distro = Choose-Distro -object $settings -path $path
+                $distro = Choose-Distro -object $settings
                 Write-Host "Yes"
             }
             default {
@@ -94,7 +93,6 @@ function ChangeDistroMenu {
 # Show the distros to choose from and run Change-Profile accordingly
 function Choose-Distro {
     param (
-        [string]$path,
         [psobject]$settings
     )
     Write-Host "================ Choose what Distro to set as default ================"
@@ -105,12 +103,12 @@ function Choose-Distro {
     switch ($answer) {
         1 {
             Write-Host "You chose Ubuntu"
-            Change-Profile -distroName "Ubuntu" -object $settings -path $path
+            Change-Profile -distroName "Ubuntu" -object $settings
             return "Ubuntu"
         }
         2 {
             Write-Host "You chose Powershell 7"
-            Change-Profile -distroName "Powershell" -object $settings -path $path
+            Change-Profile -distroName "Powershell" -object $settings
             return "Powershell"
         }
         default {
@@ -124,7 +122,6 @@ function Choose-Distro {
 function Change-Profile {
     param (
         [string]$distroName,
-        [string]$path,
         [psobject]$settings
     )
 
