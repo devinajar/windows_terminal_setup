@@ -1,0 +1,25 @@
+{
+    "profiles":
+    {
+        "list":
+        [
+            {
+                "colorScheme": "Catppuccin Frappe",
+                "cursorShape": "filledBox",
+                "hidden": false,
+                "intenseTextStyle": "bright",
+                "name": "PowerShell",
+                "opacity": 100,
+                "useAcrylic": false
+            },
+            {
+                "colorScheme": "ChallengerDeep",
+                "cursorShape": "emptyBox",
+                "hidden": false,
+                "name": "Ubuntu",
+                "opacity": 80,
+                "useAcrylic": true
+            }
+        ]
+    }
+}
