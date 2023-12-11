@@ -1,7 +1,20 @@
-# TODO:Add parameters to the functions that need them
-    
-# Convert the modified $settings Object back to JSON and save it to $path\settings.json
-function WriteSettings {
+function Read-JsonToObject {
+    param (
+        [string]$path
+    )
+    try {
+        return Get-Content $path -Raw | ConvertFrom-Json
+    }
+    catch {
+        $errorMessage = "Error reading JSON from $path: $_"
+        Write-Host $errorMessage
+        # Log the error to a file
+        Add-Content -Path "error.log" -Value $errorMessage
+        throw $errorMessage
+    }
+}
+
+function Write-ObjectToJSON {
     param (
         [psobject]$settings,
         [string]$path
@@ -10,29 +23,32 @@ function WriteSettings {
 }
 
 # Add the color schemes from the snippets
-function SetupThemes {
+function Setup-Themes {
     param (
         [psobject]$settings
     )
     # Get the new schemes from the schemes.json file
     $newSchemes = Get-Content ..\json_snippets\schemes.json -raw | ConvertFrom-Json
 
-    # Add the schemes to the settings Object
+    # Add the schemes to the settings object
     foreach ($scheme in $newSchemes.schemes) {
         $settings.schemes += $scheme
     }
 }
 
 # Change the profiles appearence
-function SetupProfiles {
+function Setup-Profiles {
+    param (
+        [psobject]$settings
+    )
     # Get the new configs from the profiles.json file
-    $newProfiles = Get-Content ..\json_snippets\profiles.json -raw | ConvertFrom-Json
+    $newProfiles = Read-JsonToObject -path ..\json_snippets\profiles.json   
 
     # Update the profiles in the original $settings with the ones from $newProfiles
     foreach ($newProfile in $newProfiles.profiles.list) {
         $originalProfile = $settings.profiles.list | Where-Object { $_.name -eq $newProfile.name }
         if ($null -ne $originalProfile) {
-            # Update each property of the existing profile
+            
             foreach ($property in $newProfile.PSObject.Properties) {
                 $propertyName = $property.Name
                 # Check if the property exists in the original settings Object
@@ -51,6 +67,12 @@ function SetupProfiles {
 # Functions to change the Default profile
 # Ask if the user wants to change the Default Profile
 function ChangeDistroMenu {
+    param (
+        [string]$path,
+        [psobject]$settings
+    )
+
+    $distro = "Cancelled" 
     do {
         Clear-Host
         Write-Host "================ Change the Default Profile ================"
@@ -58,7 +80,7 @@ function ChangeDistroMenu {
         $answer = Read-Host "[y/N]"
         switch ($answer) {
             {$_ -in "y", "Y"} {
-                $distro = ChooseDistro
+                $distro = Choose-Distro -object $settings -path $path
                 Write-Host "Yes"
             }
             default {
@@ -66,11 +88,15 @@ function ChangeDistroMenu {
                 $answer = "no"
             }
         }
-    } while ( $distro -eq "Cancelled" || $answer -ne "no")
+    } while ( $distro -eq "Cancelled" -or $answer -ne "no")
 }
 
-# Show the distros to choose from and run ChangeProfile accordingly
-function ChooseDistro {
+# Show the distros to choose from and run Change-Profile accordingly
+function Choose-Distro {
+    param (
+        [string]$path,
+        [psobject]$settings
+    )
     Write-Host "================ Choose what Distro to set as default ================"
     Write-Host "1 - Ubuntu"
     Write-Host "2 - Powershell 7"
@@ -79,12 +105,12 @@ function ChooseDistro {
     switch ($answer) {
         1 {
             Write-Host "You chose Ubuntu"
-            ChangeProfile -distroName "Ubuntu"
+            Change-Profile -distroName "Ubuntu" -object $settings -path $path
             return "Ubuntu"
         }
         2 {
             Write-Host "You chose Powershell 7"
-            ChangeProfile -distroName "Powershell"
+            Change-Profile -distroName "Powershell" -object $settings -path $path
             return "Powershell"
         }
         default {
@@ -95,22 +121,20 @@ function ChooseDistro {
 }
 
 # Change the default profile
-function ChangeProfile {
+function Change-Profile {
     param (
-        [string]$distroName
+        [string]$distroName,
+        [string]$path,
+        [psobject]$settings
     )
-    $settingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState" 
-    # Convert the file to an object
-    $settings = Get-Content $settingsPath\settings.json -raw | ConvertFrom-Json
+
     # Find the GUID of the Ubuntu profile 
-    $matchingProfileObject = $settings.profiles.list | Where-Object { $_.name -eq $distroName }
+    $profileToBeSet = $settings.profiles.list | Where-Object { $_.name -eq $distroName }
     # Check if the Profile exists
-    if ($null -ne $matchingProfileObject) {
+    if ($null -ne $profileToBeSet) {
         # Set the profile as default in the settings.json Object
-        $settings.defaultProfile = $matchingProfileObject.guid
-        # Update the settings file
-        $settings | ConvertTo-Json -Depth 10 | Set-Content $settingsPath\settings.json
+        $settings.defaultProfile = $profileToBeSet.guid
     } else {
-        Write-Host "Profile '$profileToMatch' not found"
+        Write-Host "Profile '$profileToBeSet' not found"
     }
 }
