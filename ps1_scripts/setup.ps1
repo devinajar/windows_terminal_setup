@@ -38,3 +38,6 @@ Setup-Profiles -settings $settingsObject
 
 # 3.4 Ask if the user wants to set a default profile and set it if requested
 ChangeDefaultProfileMenu -settings $settingsObject
+
+# 3.5 Save the changes to the settings.json
+Write-ObjectToJSON -settings $settingsObject -path $settingsPath
